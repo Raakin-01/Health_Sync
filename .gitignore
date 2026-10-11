@@ -11,7 +11,8 @@ dist-ssr
 .idea
 .DS_Store
 
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
+# Test output (Vitest / Playwright), matched at any depth
+coverage/
+test-results/
+playwright-report/
+blob-report/
