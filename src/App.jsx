@@ -9,6 +9,7 @@ import Login from './pages/Login.jsx'
 import NurseDashboard from './pages/NurseDashboard.jsx'
 import DoctorQueue from './pages/DoctorQueue.jsx'
 import AdminAnalytics from './pages/AdminAnalytics.jsx'
+import Intake from './pages/Intake.jsx'
 import NotFound from './pages/NotFound.jsx'
 
 import { useStore } from './lib/store.js'
@@ -44,6 +45,14 @@ export default function App() {
               element={
                 <ProtectedRoute allow={['doctor']}>
                   <DoctorQueue />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/intake"
+              element={
+                <ProtectedRoute allow={['nurse', 'admin']}>
+                  <Intake />
                 </ProtectedRoute>
               }
             />

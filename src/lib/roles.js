@@ -12,11 +12,15 @@ export function roleHome(role) {
 }
 
 const NAV_LINKS = {
-  nurse: [{ to: '/dashboard', label: 'Dashboard' }],
+  nurse: [
+    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/intake', label: 'Intake' },
+  ],
   doctor: [{ to: '/queue', label: 'Queue' }],
   admin: [
     { to: '/analytics', label: 'Analytics' },
     { to: '/dashboard', label: 'Dashboard' },
+    { to: '/intake', label: 'Intake' },
   ],
 }
 

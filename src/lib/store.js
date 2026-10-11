@@ -12,11 +12,12 @@ import { wards, createBeds } from '../data/wards.js'
 import { createPatients } from '../data/patients.js'
 import { users } from '../data/users.js'
 import { canTransition, RESERVATION_MINUTES } from './bedMachine.js'
+import { scoreVitals } from './triage.js'
 import * as sync from './sync.js'
 
 export const STORAGE_KEY = 'healthsync:state'
 export const SESSION_KEY = 'healthsync:session'
-export const SEED_VERSION = 1
+export const SEED_VERSION = 2
 
 // How long a reservation lasts. Mutable at runtime so demos can shorten it
 // via window.__hs.setReservationMinutes(1) (dev only).
@@ -48,6 +49,20 @@ const listeners = new Set()
 
 // ---------------------------------------------------------------- seed + hydrate
 
+/** Attach triage score/level (and arrivedAt) computed from the patient's vitals. */
+function scorePatient(patient) {
+  if (!patient || !patient.vitals) return patient
+  const scored = scoreVitals(patient.vitals)
+  return {
+    ...patient,
+    arrivedAt: patient.arrivedAt ?? Date.now(),
+    score: scored.score,
+    level: scored.level,
+    breakdown: scored.breakdown,
+    redFlag: scored.redFlag,
+  }
+}
+
 function createSeed(now = Date.now()) {
   return {
     version: SEED_VERSION,
@@ -56,7 +71,7 @@ function createSeed(now = Date.now()) {
     users: users.map((u) => ({ ...u })),
     wards: wards.map((w) => ({ ...w })),
     beds: createBeds(now),
-    patients: createPatients(now),
+    patients: createPatients(now).map(scorePatient),
   }
 }
 
@@ -75,7 +90,8 @@ function hydrate() {
   }
   const base = data || createSeed()
   // Session always comes from sessionStorage for this tab, never from shared data.
-  return { ...base, session: readSession() }
+  // Re-score patients so a state persisted before triage existed is still valid.
+  return { ...base, session: readSession(), patients: (base.patients || []).map(scorePatient) }
 }
 
 let state = hydrate()
@@ -213,8 +229,44 @@ export function admitPatient(patientId, bedId) {
   }))
 }
 
-export function addPatient(patient) {
+function nextPatientId(patients) {
+  const numbers = patients
+    .map((p) => Number((p.id.match(/^pt-(\d+)$/) || [])[1]))
+    .filter(Number.isFinite)
+  const next = (numbers.length ? Math.max(...numbers) : 0) + 1
+  return `pt-${String(next).padStart(3, '0')}`
+}
+
+/**
+ * Score and add a waiting patient. `input` is { name?, age?, gender?,
+ * chiefComplaint?, vitals }. Stamps arrivedAt and returns the stored patient
+ * (so callers can toast the name/score/level).
+ */
+export function addPatient(input = {}) {
+  const vitals = { ...(input.vitals || {}) }
+  const scored = scoreVitals(vitals)
+  const id = nextPatientId(state.patients)
+  const suffix = Number(id.replace('pt-', ''))
+  const name = String(input.name || '').trim() || `Unknown Patient #${suffix}`
+
+  const patient = {
+    id,
+    name,
+    age: input.age === '' || input.age == null ? null : Number(input.age),
+    gender: input.gender || null,
+    chiefComplaint: String(input.chiefComplaint || '').trim(),
+    vitals,
+    arrivedAt: Date.now(),
+    status: 'waiting',
+    admittedBedId: null,
+    score: scored.score,
+    level: scored.level,
+    breakdown: scored.breakdown,
+    redFlag: scored.redFlag,
+  }
+
   commit((s) => ({ ...s, patients: [...s.patients, patient] }))
+  return patient
 }
 
 export function updatePatient(patientId, patch) {
