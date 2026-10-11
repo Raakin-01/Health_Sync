@@ -22,9 +22,9 @@ const PORT = 5199
 const BASE = `http://localhost:${PORT}`
 const WIDTHS = [390, 768, 1280]
 
-const CHROME_EXE =
-  process.env.CHROME_EXE ||
-  'C:\\Users\\admin\\AppData\\Local\\ms-playwright\\chromium-1248\\chrome-win64\\chrome.exe'
+// Optional override for a specific Chromium executable. Leave unset to use
+// whatever browser Playwright manages for this project.
+const CHROME_EXE = process.env.CHROME_EXE
 
 const ROLES = [
   { role: 'nurse', button: 'Login as Nurse', pages: ['/dashboard', '/intake'] },
@@ -145,7 +145,7 @@ async function main() {
   console.log('Dev server ready.\n')
 
   const launchOpts = {}
-  if (fs.existsSync(CHROME_EXE)) launchOpts.executablePath = CHROME_EXE
+  if (CHROME_EXE && fs.existsSync(CHROME_EXE)) launchOpts.executablePath = CHROME_EXE
   const browser = await chromium.launch(launchOpts)
 
   const problems = []

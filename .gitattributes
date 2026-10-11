@@ -1,0 +1,13 @@
+# Normalize line endings to LF in the repository and let git detect text files.
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+
+# SVG is text, so keep it diffable
+*.svg text

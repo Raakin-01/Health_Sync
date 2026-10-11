@@ -1,9 +1,25 @@
 {
   "name": "healthsync",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0-phase3",
   "type": "module",
-  "description": "HealthSync - Hospital Resource & Bed Management System (frontend)",
+  "description": "HealthSync - a hospital resource and bed management dashboard with live bed tracking, triage scoring and a priority queue for emergency queues (FSD Phase 3 frontend).",
+  "author": "HealthSync Team (TD_008)",
+  "license": "MIT",
+  "keywords": [
+    "healthsync",
+    "hospital",
+    "bed-management",
+    "triage",
+    "priority-queue",
+    "react",
+    "vite",
+    "bootstrap",
+    "recharts"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

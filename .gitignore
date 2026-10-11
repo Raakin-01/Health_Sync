@@ -1,18 +1,35 @@
-node_modules
-dist
-dist-ssr
-*.local
-.env
-.env.*
+# Dependencies
+node_modules/
 
-# Editor
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
+# Build output
+dist/
+dist-ssr/
+.vite/
 
-# Test output (Vitest / Playwright), matched at any depth
+# Test / coverage output
 coverage/
 test-results/
 playwright-report/
 blob-report/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files (keep the example template)
+.env
+.env.*
+!.env.example
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Local overrides
+*.local
