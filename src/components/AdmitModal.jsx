@@ -50,8 +50,8 @@ export default function AdmitModal({ show, patient, beds, wards, onHide, onConfi
         </ButtonGroup>
 
         {totalFree === 0 ? (
-          <Alert variant="warning" className="mb-0">
-            No beds available of this type.
+          <Alert variant="info" className="mb-0 text-center">
+            No beds of this type are available right now. Try another bed type.
           </Alert>
         ) : (
           <Stack gap={3}>
@@ -64,7 +64,7 @@ export default function AdmitModal({ show, patient, beds, wards, onHide, onConfi
                     <div className="d-flex align-items-center gap-2 mb-2">
                       <span className="fw-semibold">{ward.name}</span>
                       <span className="text-muted small">
-                        {meta.label} · {availableByWard[ward.id].length} free
+                        {meta.label} - {availableByWard[ward.id].length} free
                       </span>
                     </div>
                     <div className="d-flex flex-wrap gap-2">
@@ -75,7 +75,7 @@ export default function AdmitModal({ show, patient, beds, wards, onHide, onConfi
                           variant={bedId === bed.id ? 'primary' : 'outline-secondary'}
                           onClick={() => setBedId(bed.id)}
                         >
-                          {ward.name} · {bed.label}
+                          {ward.name} - {bed.label}
                         </Button>
                       ))}
                     </div>

@@ -4,17 +4,17 @@ import { formatWait, minutesWaited, trendOf } from '../lib/queue.js'
 import { levelMeta } from '../lib/triageMeta.js'
 
 const TREND = {
-  up: { arrow: '↑', text: 'Worsening', variant: 'text-danger' },
-  down: { arrow: '↓', text: 'Improving', variant: 'text-success' },
-  flat: { arrow: '→', text: 'Stable', variant: 'text-muted' },
-  null: { arrow: '—', text: 'No re-checks', variant: 'text-muted' },
+  up: { arrow: '^', text: 'Worsening', variant: 'text-danger' },
+  down: { arrow: 'v', text: 'Improving', variant: 'text-success' },
+  flat: { arrow: '->', text: 'Stable', variant: 'text-muted' },
+  null: { arrow: '-', text: 'No re-checks', variant: 'text-muted' },
 }
 
 function VitalsSummary({ vitals }) {
   if (!vitals) return null
   return (
     <span className="text-muted small">
-      RR {vitals.rr}, SpO₂ {vitals.spo2}%, BP {vitals.sbp}, HR {vitals.hr}, {vitals.temp}°C,{' '}
+      RR {vitals.rr}, SpO2 {vitals.spo2}%, BP {vitals.sbp}, HR {vitals.hr}, {vitals.temp}C,{' '}
       {vitals.consciousness}
     </span>
   )
@@ -32,10 +32,10 @@ export default function QueueRow({ patient, rank, now, readOnly, onAdmit, onRech
         <div className="fw-semibold">{patient.name}</div>
         <div className="text-muted small">
           {patient.age != null ? `${patient.age} yrs` : 'Age n/a'}
-          {patient.gender ? ` · ${patient.gender}` : ''}
+          {patient.gender ? ` - ${patient.gender}` : ''}
         </div>
       </td>
-      <td className="small" style={{ minWidth: '10rem' }}>{patient.chiefComplaint || '—'}</td>
+      <td className="small" style={{ minWidth: '10rem' }}>{patient.chiefComplaint || '-'}</td>
       <td><Badge bg={meta.variant}>{meta.label}</Badge></td>
       <td className="text-center fw-semibold">{patient.score}</td>
       <td className="text-center">{patient.effectivePriority.toFixed(1)}</td>

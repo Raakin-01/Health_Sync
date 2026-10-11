@@ -9,8 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "screenshots": "node scripts/screenshots.js"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",

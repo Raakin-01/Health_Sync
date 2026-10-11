@@ -46,10 +46,10 @@ function consciousnessPoints(v) {
 
 const VITALS = [
   { key: 'rr', label: 'Resp. rate', format: (v) => `${v}/min`, points: rrPoints },
-  { key: 'spo2', label: 'SpO₂', format: (v) => `${v}%`, points: spo2Points },
+  { key: 'spo2', label: 'SpO2', format: (v) => `${v}%`, points: spo2Points },
   { key: 'sbp', label: 'Systolic BP', format: (v) => `${v} mmHg`, points: sbpPoints },
   { key: 'hr', label: 'Heart rate', format: (v) => `${v}/min`, points: hrPoints },
-  { key: 'temp', label: 'Temperature', format: (v) => `${v} °C`, points: tempPoints },
+  { key: 'temp', label: 'Temperature', format: (v) => `${v} C`, points: tempPoints },
   { key: 'consciousness', label: 'Consciousness', format: (v) => v, points: consciousnessPoints },
 ]
 
@@ -88,7 +88,7 @@ export const VITAL_RANGES = {
 
 const VITAL_LABELS = {
   rr: 'Respiratory rate',
-  spo2: 'SpO₂',
+  spo2: 'SpO2',
   sbp: 'Systolic BP',
   hr: 'Heart rate',
   temp: 'Temperature',

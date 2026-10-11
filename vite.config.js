@@ -7,6 +7,13 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  // Pre-bundle recharts when the dev server starts, not on first visit to
+  // /analytics. The analytics page is lazy-loaded, so without this Vite would
+  // re-optimize deps *while* the browser is importing the lazy chunk, which can
+  // abort the dynamic import ("Loading failed for the module").
+  optimizeDeps: {
+    include: ['recharts'],
+  },
   test: {
     environment: 'jsdom',
     globals: true,

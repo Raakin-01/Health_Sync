@@ -1,17 +1,25 @@
-import { Container, Button } from 'react-bootstrap'
+import { Button, Container } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 
+import PageHeader from '../components/PageHeader.jsx'
+import { useDocumentTitle } from '../lib/useDocumentTitle.js'
+
 export default function NotFound() {
+  useDocumentTitle('Not found')
+
   return (
-    <Container className="py-5 text-center">
-      <div className="display-4 fw-bold text-primary mb-2">404</div>
-      <h1 className="h4 mb-3">Page not found</h1>
-      <p className="text-muted">
-        We could not find the page you were looking for.
-      </p>
-      <Button as={Link} to="/" variant="primary">
-        Back to home
-      </Button>
+    <Container className="py-5">
+      <div className="text-center display-1 fw-bold text-primary mb-3">404</div>
+      <PageHeader
+        align="center"
+        title="Page not found"
+        subtitle="We could not find the page you were looking for."
+        actions={
+          <Button as={Link} to="/" variant="primary">
+            Back to home
+          </Button>
+        }
+      />
     </Container>
   )
 }

@@ -1,6 +1,7 @@
 import { Button, Container, Nav, Navbar as BsNavbar } from 'react-bootstrap'
 import { NavLink, useNavigate } from 'react-router-dom'
 
+import AlertBell from './AlertBell.jsx'
 import { useStore, logout } from '../lib/store.js'
 import { homeForSession, navLinksFor } from '../lib/roles.js'
 
@@ -38,10 +39,11 @@ export default function Navbar() {
 
             {session ? (
               <div className="d-flex align-items-lg-center gap-2 mt-2 mt-lg-0 ms-lg-3">
+                <AlertBell />
                 <span className="navbar-text text-white-50">
                   {session.name} ({session.role})
                 </span>
-                <Button variant="outline-light" size="sm" onClick={handleLogout}>
+                <Button variant="outline-light" size="sm" onClick={handleLogout} aria-label="Log out">
                   Logout
                 </Button>
               </div>

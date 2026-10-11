@@ -1,12 +1,18 @@
 import { Container } from 'react-bootstrap'
 
+import PageHeader from '../components/PageHeader.jsx'
 import TriageForm from '../components/TriageForm.jsx'
+import { useDocumentTitle } from '../lib/useDocumentTitle.js'
 
 export default function Intake() {
+  useDocumentTitle('Intake')
+
   return (
     <Container fluid="lg" className="py-4">
-      <h1 className="h4 mb-1">Patient Intake</h1>
-      <p className="text-muted mb-4">Triage scoring and registration of waiting patients.</p>
+      <PageHeader
+        title="Patient Intake"
+        subtitle="Triage scoring and registration of waiting patients."
+      />
       <TriageForm />
     </Container>
   )

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Accordion, Badge, Card, Col, Container, Row } from 'react-bootstrap'
 
 import AdmitModal from '../components/AdmitModal.jsx'
+import PageHeader from '../components/PageHeader.jsx'
 import QueueList from '../components/QueueList.jsx'
 import RecheckModal from '../components/RecheckModal.jsx'
 import StatCard from '../components/StatCard.jsx'
@@ -9,9 +10,11 @@ import { useToast } from '../components/Toasts.jsx'
 import { admitPatient, reassessPatient, useStore } from '../lib/store.js'
 import { formatWait, minutesWaited, queueOrder } from '../lib/queue.js'
 import { levelMeta } from '../lib/triageMeta.js'
+import { useDocumentTitle } from '../lib/useDocumentTitle.js'
 import { useNow } from '../lib/useNow.js'
 
 export default function DoctorQueue() {
+  useDocumentTitle('Queue')
   const { patients, beds, wards, session } = useStore()
   const toast = useToast()
   const now = useNow(30000)
@@ -33,7 +36,7 @@ export default function DoctorQueue() {
 
   function bedLabel(bedId) {
     const bed = beds.find((b) => b.id === bedId)
-    return bed ? `${bed.wardId} · ${bed.label}` : bedId
+    return bed ? `${bed.wardId} - ${bed.label}` : bedId
   }
 
   function handleAdmit(bedId) {
@@ -52,11 +55,11 @@ export default function DoctorQueue() {
     const delta = result.patient.score - result.previousScore
     const name = result.patient.name
     if (delta >= 3) {
-      toast(`${name}: ${result.previousScore} → ${result.patient.score}. Deteriorating patient.`, 'danger')
+      toast(`${name}: ${result.previousScore} -> ${result.patient.score}. Deteriorating patient.`, 'danger')
     } else if (delta > 0) {
-      toast(`${name}: score up ${result.previousScore} → ${result.patient.score}.`, 'warning')
+      toast(`${name}: score up ${result.previousScore} -> ${result.patient.score}.`, 'warning')
     } else if (delta < 0) {
-      toast(`${name}: improving ${result.previousScore} → ${result.patient.score}.`, 'success')
+      toast(`${name}: improving ${result.previousScore} -> ${result.patient.score}.`, 'success')
     } else {
       toast(`${name}: score unchanged (${result.patient.score}).`, 'primary')
     }
@@ -65,13 +68,11 @@ export default function DoctorQueue() {
 
   return (
     <Container fluid="lg" className="py-4">
-      <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-        <div>
-          <h1 className="h4 mb-0">Doctor Queue</h1>
-          <p className="text-muted mb-0">Patients ranked by severity and waiting time.</p>
-        </div>
-        {readOnly && <Badge bg="secondary" className="fs-6">Read-only view</Badge>}
-      </div>
+      <PageHeader
+        title="Doctor Queue"
+        subtitle="Patients ranked by severity and waiting time."
+        actions={readOnly ? <Badge bg="secondary" className="fs-6">Read-only view</Badge> : null}
+      />
 
       <Row className="g-3 mb-4">
         <Col xs={4} lg={3}><StatCard label="Waiting" value={ordered.length} /></Col>
@@ -81,10 +82,10 @@ export default function DoctorQueue() {
           <Card className="hs-card border-0 shadow-sm h-100">
             <Card.Body className="py-3">
               <div className="text-uppercase small text-muted fw-semibold">Next up</div>
-              <div className="fs-5 fw-bold lh-1 my-1">{nextUp ? nextUp.name : '—'}</div>
+              <div className="fs-5 fw-bold lh-1 my-1">{nextUp ? nextUp.name : '-'}</div>
               {nextUp && (
                 <div className="text-muted small">
-                  Score {nextUp.score} · {levelMeta(nextUp.level).label}
+                  Score {nextUp.score} - {levelMeta(nextUp.level).label}
                 </div>
               )}
             </Card.Body>
@@ -97,7 +98,7 @@ export default function DoctorQueue() {
           <Accordion.Header>How is this ordered?</Accordion.Header>
           <Accordion.Body className="text-muted small">
             <p className="mb-2">
-              <strong>Effective priority = triage score + 0.1 × minutes waited.</strong> The longer a
+              <strong>Effective priority = triage score + 0.1 x minutes waited.</strong> The longer a
               patient waits, the higher they climb, so no one is starved. Ties go to the first to
               arrive.
             </p>
@@ -114,6 +115,7 @@ export default function DoctorQueue() {
         patients={ordered}
         now={now}
         readOnly={readOnly}
+        canIntake={session?.role === 'nurse' || session?.role === 'admin'}
         onAdmit={setAdmitTarget}
         onRecheck={setRecheckTarget}
       />

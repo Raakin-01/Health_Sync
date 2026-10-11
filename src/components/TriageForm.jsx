@@ -90,7 +90,7 @@ export default function TriageForm() {
     })
 
     const meta = levelMeta(patient.level)
-    toast(`${patient.name} added — score ${patient.score} (${meta.label}).`, meta.variant)
+    toast(`${patient.name} added - score ${patient.score} (${meta.label}).`, meta.variant)
     setLastSubmitted(patient)
     setValues(EMPTY)
     setTouched({})

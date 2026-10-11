@@ -13,6 +13,7 @@ import { createPatients } from '../data/patients.js'
 import { users } from '../data/users.js'
 import { canTransition, RESERVATION_MINUTES } from './bedMachine.js'
 import { scoreVitals, validateVitals } from './triage.js'
+import { CLEANING_REMINDER_MINUTES } from './alerts.js'
 import * as sync from './sync.js'
 
 export const STORAGE_KEY = 'healthsync:state'
@@ -430,6 +431,48 @@ export function useStoreSelector(selector) {
 // DEV ONLY: inspect/mutate the store from the browser console. Remove before the
 // final hand-off (see PROGRESS.md "Next phase").
 if (import.meta.env.DEV) {
+  // DEV ONLY: move a bed's updatedAt earlier so the cleaning reminder can be
+  // exercised without waiting CLEANING_REMINDER_MINUTES.
+  function shiftBedUpdated(bedId, minutes) {
+    const bed = state.beds.find((b) => b.id === bedId)
+    if (!bed) return { ok: false, error: 'Bed was not found.' }
+    const delta = Number(minutes) * 60000
+    if (!Number.isFinite(delta)) return { ok: false, error: 'Minutes must be a number.' }
+    commit((s) => ({
+      ...s,
+      beds: s.beds.map((b) => (b.id === bedId ? { ...b, updatedAt: b.updatedAt - delta } : b)),
+    }))
+    return { ok: true }
+  }
+
+  // DEV ONLY: trigger each F10 alert path from the console.
+  //   __hs.actions.demoAlert('critical' | 'icu' | 'cleaning')
+  function demoAlert(kind) {
+    if (kind === 'critical') {
+      addPatient({
+        name: 'Demo Critical Patient',
+        age: 70,
+        gender: 'Male',
+        chiefComplaint: 'Collapse with severe derangement',
+        vitals: { rr: 26, spo2: 90, sbp: 85, hr: 135, temp: 39.5, consciousness: 'Voice' },
+      })
+      return { ok: true }
+    }
+    if (kind === 'icu') {
+      const bed = state.beds.find(
+        (b) => b.wardId === 'icu-1' && (b.status === 'reserved' || b.status === 'available'),
+      )
+      if (!bed) return { ok: false, error: 'No free ICU bed to occupy.' }
+      return setBedStatus(bed.id, 'occupied')
+    }
+    if (kind === 'cleaning') {
+      const bed = state.beds.find((b) => b.status === 'cleaning')
+      if (!bed) return { ok: false, error: 'No bed is currently cleaning.' }
+      return shiftBedUpdated(bed.id, CLEANING_REMINDER_MINUTES + 20)
+    }
+    return { ok: false, error: "Unknown alert kind (use 'critical', 'icu' or 'cleaning')." }
+  }
+
   window.__hs = {
     getState,
     subscribe,
@@ -449,6 +492,8 @@ if (import.meta.env.DEV) {
       getReservationMinutes,
       reassessPatient,
       shiftArrival,
+      shiftBedUpdated,
+      demoAlert,
     },
   }
 }

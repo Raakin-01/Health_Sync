@@ -26,7 +26,12 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={toast}>
       {children}
-      <ToastContainer position="top-end" className="p-3 hs-toasts">
+      <ToastContainer
+        position="top-end"
+        className="p-3 hs-toasts"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {toasts.map((t) => (
           <Toast key={t.id} bg={t.variant} autohide delay={4000} onClose={() => remove(t.id)}>
             <Toast.Body className={t.variant === 'warning' || t.variant === 'light' ? 'text-dark' : 'text-white'}>

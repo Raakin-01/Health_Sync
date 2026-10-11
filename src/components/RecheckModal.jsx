@@ -61,7 +61,7 @@ export default function RecheckModal({ show, patient, onHide, onSave }) {
   return (
     <Modal show={show} onHide={onHide} centered size="lg">
       <Modal.Header closeButton>
-        <Modal.Title className="h6 mb-0">Re-check vitals — {patient?.name}</Modal.Title>
+        <Modal.Title className="h6 mb-0">Re-check vitals - {patient?.name}</Modal.Title>
       </Modal.Header>
 
       <Modal.Body>

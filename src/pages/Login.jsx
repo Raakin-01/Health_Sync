@@ -2,14 +2,17 @@ import { useState } from 'react'
 import { Button, Card, Col, Container, Form, Row } from 'react-bootstrap'
 import { Navigate } from 'react-router-dom'
 
+import PageHeader from '../components/PageHeader.jsx'
 import { login, quickLogin, useStore } from '../lib/store.js'
 import { roles } from '../data/users.js'
 import { roleHome } from '../lib/roles.js'
+import { useDocumentTitle } from '../lib/useDocumentTitle.js'
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/
 const ROLE_LABEL = { nurse: 'Nurse', doctor: 'Doctor', admin: 'Admin' }
 
 export default function Login() {
+  useDocumentTitle('Sign in')
   const { session, users } = useStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -37,13 +40,15 @@ export default function Login() {
 
   return (
     <Container className="py-5">
+      <PageHeader
+        align="center"
+        title="Sign in to HealthSync"
+        subtitle={'Hospital Resource & Bed Management'}
+      />
       <Row className="justify-content-center">
         <Col xs={12} sm={10} md={7} lg={5}>
           <Card className="hs-card shadow-sm border-0">
             <Card.Body className="p-4">
-              <h1 className="h4 mb-1">Sign in to HealthSync</h1>
-              <p className="text-muted small mb-4">Hospital Resource &amp; Bed Management</p>
-
               <Form noValidate onSubmit={handleSubmit}>
                 <Form.Group className="mb-3" controlId="loginEmail">
                   <Form.Label>Email address</Form.Label>

@@ -1,15 +1,19 @@
 import { useMemo, useState } from 'react'
-import { Alert, Badge, Col, Container, Form, Row } from 'react-bootstrap'
+import { Badge, Button, Col, Container, Form, Row } from 'react-bootstrap'
 
 import BedStatusModal from '../components/BedStatusModal.jsx'
+import EmptyState from '../components/EmptyState.jsx'
+import PageHeader from '../components/PageHeader.jsx'
 import StatCard from '../components/StatCard.jsx'
 import WardCard from '../components/WardCard.jsx'
 import { useToast } from '../components/Toasts.jsx'
 import { setBedStatus, useStore } from '../lib/store.js'
 import { STATUS_META, statusLabel, wardTypeLabel } from '../lib/bedMeta.js'
+import { useDocumentTitle } from '../lib/useDocumentTitle.js'
 import { useNow } from '../lib/useNow.js'
 
 export default function NurseDashboard({ readOnly = false }) {
+  useDocumentTitle('Dashboard')
   const { beds, wards, session } = useStore()
   const toast = useToast()
   const now = useNow(15000)
@@ -19,7 +23,7 @@ export default function NurseDashboard({ readOnly = false }) {
   const [bedStatus, setBedStatusFilter] = useState('all')
   const [selectedId, setSelectedId] = useState(null)
 
-  // Admins get the read-only board everywhere (route + analytics embed).
+  // Admins get the read-only board when they open the dashboard route directly.
   const isReadOnly = readOnly || session?.role !== 'nurse'
 
   const stats = useMemo(() => {
@@ -57,6 +61,13 @@ export default function NurseDashboard({ readOnly = false }) {
   const visibleWards = wards.filter((w) => filtered.some((b) => b.wardId === w.id))
   const selectedBed = selectedId ? beds.find((b) => b.id === selectedId) : null
   const types = [...new Set(wards.map((w) => w.type))]
+  const hasFilters = wardId !== 'all' || type !== 'all' || bedStatus !== 'all'
+
+  function clearFilters() {
+    setWardId('all')
+    setType('all')
+    setBedStatusFilter('all')
+  }
 
   function handleChoose(nextStatus) {
     if (!selectedBed) return
@@ -71,13 +82,11 @@ export default function NurseDashboard({ readOnly = false }) {
 
   return (
     <Container fluid="lg" className="py-4">
-      <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-        <div>
-          <h1 className="h4 mb-0">Bed Board</h1>
-          <p className="text-muted mb-0">Live ward and bed status.</p>
-        </div>
-        {isReadOnly && <Badge bg="secondary" className="fs-6">Read-only view</Badge>}
-      </div>
+      <PageHeader
+        title="Bed Board"
+        subtitle="Live ward and bed status."
+        actions={isReadOnly ? <Badge bg="secondary" className="fs-6">Read-only view</Badge> : null}
+      />
 
       <Row className="g-3 mb-3">
         <Col xs={6} lg={3}><StatCard label="Total beds" value={stats.total} /></Col>
@@ -129,7 +138,15 @@ export default function NurseDashboard({ readOnly = false }) {
       </Row>
 
       {visibleWards.length === 0 ? (
-        <Alert variant="info" className="mb-0">No beds match the current filters.</Alert>
+        <EmptyState
+          title="No beds match these filters"
+          message="Try a different ward, bed type or status."
+          action={
+            hasFilters ? (
+              <Button variant="primary" onClick={clearFilters}>Clear filters</Button>
+            ) : null
+          }
+        />
       ) : (
         <Row className="g-3">
           {visibleWards.map((ward) => (

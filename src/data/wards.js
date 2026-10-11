@@ -71,6 +71,9 @@ export function createBeds(now = Date.now()) {
         patientId: null,
         occupiedSince: null,
         expiresAt: null,
+        // Baseline so time-based UI (cleaning reminder) has something to read;
+        // real transitions overwrite this in store.setBedStatus.
+        updatedAt: now,
       }
 
       if (status === 'occupied') {

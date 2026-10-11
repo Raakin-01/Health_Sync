@@ -5,10 +5,10 @@ import { CONSCIOUSNESS_LEVELS } from '../lib/triage.js'
 // Shared vitals form fields (used by both the intake form and the re-check modal).
 export const NUMERIC_FIELDS = [
   { key: 'rr', label: 'Respiratory rate', unit: '/min', min: 4, max: 60, step: 1 },
-  { key: 'spo2', label: 'SpO₂', unit: '%', min: 50, max: 100, step: 1 },
+  { key: 'spo2', label: 'SpO2', unit: '%', min: 50, max: 100, step: 1 },
   { key: 'sbp', label: 'Systolic BP', unit: 'mmHg', min: 40, max: 300, step: 1 },
   { key: 'hr', label: 'Heart rate', unit: '/min', min: 20, max: 250, step: 1 },
-  { key: 'temp', label: 'Temperature', unit: '°C', min: 30, max: 45, step: 0.1 },
+  { key: 'temp', label: 'Temperature', unit: 'C', min: 30, max: 45, step: 0.1 },
 ]
 
 export default function VitalsFields({ values, errors = {}, invalid, onChange, onBlur, idPrefix = 'vital' }) {

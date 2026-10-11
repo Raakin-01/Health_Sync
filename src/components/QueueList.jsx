@@ -1,11 +1,28 @@
-import { Alert, Card, Table } from 'react-bootstrap'
+import { Button, Card, Table } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 
+import EmptyState from './EmptyState.jsx'
 import QueueRow from './QueueRow.jsx'
 
-/** Priority-ordered waiting list. Horizontally scrolls on narrow screens. */
-export default function QueueList({ patients, now, readOnly, onAdmit, onRecheck }) {
+/**
+ * Priority-ordered waiting list. Horizontally scrolls on narrow screens.
+ * `canIntake` lets nurses/admins jump to Intake from the empty state.
+ */
+export default function QueueList({ patients, now, readOnly, canIntake, onAdmit, onRecheck }) {
   if (patients.length === 0) {
-    return <Alert variant="info" className="mb-0">No patients waiting. Add one from the Intake page.</Alert>
+    return (
+      <EmptyState
+        title="No patients waiting"
+        message="New patients appear here as soon as they are registered."
+        action={
+          canIntake ? (
+            <Button as={Link} to="/intake" variant="primary">
+              Go to Intake
+            </Button>
+          ) : null
+        }
+      />
+    )
   }
 
   return (

@@ -25,7 +25,7 @@ export default function ScorePreview({ preview, title = 'Live score preview', st
 
             {preview.redFlag && (
               <div className="small text-danger fw-semibold mb-2">
-                Red flag: a vital scored the maximum (3) — at least Urgent.
+                Red flag: a vital scored the maximum (3) - at least Urgent.
               </div>
             )}
 
