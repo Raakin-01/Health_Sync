@@ -11,11 +11,16 @@ import { useRef, useSyncExternalStore } from 'react'
 import { wards, createBeds } from '../data/wards.js'
 import { createPatients } from '../data/patients.js'
 import { users } from '../data/users.js'
+import { canTransition, RESERVATION_MINUTES } from './bedMachine.js'
 import * as sync from './sync.js'
 
 export const STORAGE_KEY = 'healthsync:state'
 export const SESSION_KEY = 'healthsync:session'
 export const SEED_VERSION = 1
+
+// How long a reservation lasts. Mutable at runtime so demos can shorten it
+// via window.__hs.setReservationMinutes(1) (dev only).
+let reservationMinutes = RESERVATION_MINUTES
 
 // Beds/patients are shared across tabs (localStorage + BroadcastChannel), but
 // the login session is PER TAB (sessionStorage only, never persisted/broadcast),
@@ -160,21 +165,48 @@ export function logout() {
   commit((s) => ({ ...s, session: null }))
 }
 
-/** Set a bed's status. `patch` merges extra fields (e.g. expiresAt). */
+/**
+ * Change a bed's status, enforcing the state machine in lib/bedMachine.js.
+ * Reserving stamps an expiry; leaving 'reserved' clears it. Returns
+ * { ok: true } or { ok: false, error } so callers can toast the reason.
+ */
 export function setBedStatus(bedId, status, patch = {}) {
-  commit((s) => ({
-    ...s,
-    beds: s.beds.map((bed) => (bed.id === bedId ? { ...bed, status, ...patch } : bed)),
-  }))
+  const bed = state.beds.find((b) => b.id === bedId)
+  if (!bed) return { ok: false, error: `Bed ${bedId} was not found.` }
+  if (bed.status === status) return { ok: false, error: `Bed is already ${status}.` }
+  if (!canTransition(bed.status, status)) {
+    return { ok: false, error: `Cannot move a bed from ${bed.status} to ${status}.` }
+  }
+
+  const now = Date.now()
+  const next = {
+    ...bed,
+    ...patch,
+    status,
+    updatedAt: now,
+    expiresAt: status === 'reserved' ? now + reservationMinutes * 60 * 1000 : null,
+  }
+
+  // Admission / discharge bookkeeping.
+  if (status === 'occupied') {
+    next.occupiedSince = bed.occupiedSince || now
+  } else {
+    next.patientId = null
+    next.occupiedSince = null
+  }
+
+  commit((s) => ({ ...s, beds: s.beds.map((b) => (b.id === bedId ? next : b)) }))
+  return { ok: true }
 }
 
 /** Admit a waiting patient into a bed, then drop them from the queue. */
 export function admitPatient(patientId, bedId) {
+  const now = Date.now()
   commit((s) => ({
     ...s,
     beds: s.beds.map((bed) =>
       bed.id === bedId
-        ? { ...bed, status: 'occupied', patientId, occupiedSince: Date.now(), expiresAt: null }
+        ? { ...bed, status: 'occupied', patientId, occupiedSince: now, expiresAt: null, updatedAt: now }
         : bed,
     ),
     patients: s.patients.filter((p) => p.id !== patientId),
@@ -203,12 +235,33 @@ export function expireReservations(now = Date.now()) {
     const beds = s.beds.map((bed) => {
       if (bed.status === 'reserved' && bed.expiresAt && bed.expiresAt <= now) {
         changed = true
-        return { ...bed, status: 'available', patientId: null, expiresAt: null }
+        return { ...bed, status: 'available', patientId: null, expiresAt: null, updatedAt: now }
       }
       return bed
     })
     return changed ? { ...s, beds } : s
   })
+}
+
+/** Change how long new reservations last (minutes). Dev/demo helper. */
+export function setReservationMinutes(minutes) {
+  const n = Number(minutes)
+  if (!Number.isFinite(n) || n <= 0) return { ok: false, error: 'Minutes must be a positive number.' }
+  reservationMinutes = n
+  return { ok: true, minutes: n }
+}
+
+export function getReservationMinutes() {
+  return reservationMinutes
+}
+
+// Reservation expiry sweep: every 10s, move expired holds back to available.
+// commit() broadcasts, so other tabs update live. The clear-then-set pattern
+// keeps a single interval across Vite HMR reloads; skipped under Vitest.
+const EXPIRY_SWEEP_MS = 10 * 1000
+if (typeof window !== 'undefined' && !import.meta.env.TEST) {
+  clearInterval(window.__hsExpirySweep)
+  window.__hsExpirySweep = setInterval(() => expireReservations(Date.now()), EXPIRY_SWEEP_MS)
 }
 
 /** Wipe shared state and re-seed (handy for demos and tests). Keeps the tab's session. */
@@ -269,6 +322,8 @@ if (import.meta.env.DEV) {
       removePatient,
       expireReservations,
       reset,
+      setReservationMinutes,
+      getReservationMinutes,
     },
   }
 }
