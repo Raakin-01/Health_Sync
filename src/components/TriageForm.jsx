@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Badge, Button, Card, Col, Form, Row, Table } from 'react-bootstrap'
+import { Badge, Button, Card, Col, Form, Row } from 'react-bootstrap'
 
 import { addPatient } from '../lib/store.js'
 import { useToast } from './Toasts.jsx'
-import { CONSCIOUSNESS_LEVELS, scoreVitals, validateAge, validateVitals } from '../lib/triage.js'
+import ScorePreview from './ScorePreview.jsx'
+import VitalsFields from './VitalsFields.jsx'
+import { scoreVitals, validateAge, validateVitals } from '../lib/triage.js'
 import { levelMeta } from '../lib/triageMeta.js'
 
 const EMPTY = {
@@ -25,14 +27,6 @@ const PRESETS = {
   urgent: { rr: '22', spo2: '95', sbp: '120', hr: '100', temp: '38.4', consciousness: 'Alert' },
   'non-urgent': { rr: '16', spo2: '98', sbp: '125', hr: '78', temp: '36.8', consciousness: 'Alert' },
 }
-
-const NUMERIC_FIELDS = [
-  { key: 'rr', label: 'Respiratory rate', unit: '/min', min: 4, max: 60, step: 1 },
-  { key: 'spo2', label: 'SpO₂', unit: '%', min: 50, max: 100, step: 1 },
-  { key: 'sbp', label: 'Systolic BP', unit: 'mmHg', min: 40, max: 300, step: 1 },
-  { key: 'hr', label: 'Heart rate', unit: '/min', min: 20, max: 250, step: 1 },
-  { key: 'temp', label: 'Temperature', unit: '°C', min: 30, max: 45, step: 0.1 },
-]
 
 function toVitalNumbers(values) {
   return {
@@ -179,43 +173,14 @@ export default function TriageForm() {
                   </Form.Group>
                 </Col>
 
-                {NUMERIC_FIELDS.map((field) => (
-                  <Col xs={6} md={4} key={field.key}>
-                    <Form.Group controlId={`intake-${field.key}`}>
-                      <Form.Label>
-                        {field.label} <span className="text-muted">({field.unit})</span>
-                      </Form.Label>
-                      <Form.Control
-                        type="number"
-                        min={field.min}
-                        max={field.max}
-                        step={field.step}
-                        value={values[field.key]}
-                        onChange={(e) => set(field.key, e.target.value)}
-                        onBlur={() => markTouched(field.key)}
-                        isInvalid={invalid(field.key)}
-                      />
-                      <Form.Control.Feedback type="invalid">{errors[field.key]}</Form.Control.Feedback>
-                    </Form.Group>
-                  </Col>
-                ))}
-
-                <Col xs={12} md={6}>
-                  <Form.Group controlId="intakeConsciousness">
-                    <Form.Label>Consciousness</Form.Label>
-                    <Form.Select
-                      value={values.consciousness}
-                      onChange={(e) => set('consciousness', e.target.value)}
-                      onBlur={() => markTouched('consciousness')}
-                      isInvalid={invalid('consciousness')}
-                    >
-                      {CONSCIOUSNESS_LEVELS.map((level) => (
-                        <option key={level} value={level}>{level}</option>
-                      ))}
-                    </Form.Select>
-                    <Form.Control.Feedback type="invalid">{errors.consciousness}</Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
+                <VitalsFields
+                  values={values}
+                  errors={errors}
+                  invalid={invalid}
+                  onChange={set}
+                  onBlur={markTouched}
+                  idPrefix="intake"
+                />
               </Row>
 
               <div className="d-grid d-sm-flex gap-2 mt-4">
@@ -254,55 +219,5 @@ export default function TriageForm() {
         )}
       </Col>
     </Row>
-  )
-}
-
-function ScorePreview({ preview }) {
-  return (
-    <Card className="hs-card border-0 shadow-sm sticky-lg-top" style={{ top: '5rem' }}>
-      <Card.Body className="p-4">
-        <div className="text-uppercase small text-muted fw-semibold mb-2">Live score preview</div>
-
-        {!preview ? (
-          <p className="text-muted mb-0">Enter all five vitals to see the score.</p>
-        ) : (
-          <>
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-              <span className="display-6 fw-bold lh-1">{preview.score}</span>
-              <Badge bg={levelMeta(preview.level).variant} className="fs-6">
-                {levelMeta(preview.level).label}
-              </Badge>
-            </div>
-
-            {preview.redFlag && (
-              <div className="small text-danger fw-semibold mb-2">
-                Red flag: a vital scored the maximum (3) — at least Urgent.
-              </div>
-            )}
-
-            <Table size="sm" borderless className="mb-0 align-middle">
-              <thead>
-                <tr>
-                  <th>Vital</th>
-                  <th>Value</th>
-                  <th className="text-end">Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                {preview.breakdown.map((item) => (
-                  <tr key={item.key}>
-                    <td>{item.label}</td>
-                    <td className="text-muted">{item.formatted}</td>
-                    <td className={`text-end fw-semibold ${item.points === 3 ? 'text-danger' : ''}`}>
-                      {item.points}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </>
-        )}
-      </Card.Body>
-    </Card>
   )
 }

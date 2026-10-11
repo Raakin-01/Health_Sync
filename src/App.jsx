@@ -43,7 +43,7 @@ export default function App() {
             <Route
               path="/queue"
               element={
-                <ProtectedRoute allow={['doctor']}>
+                <ProtectedRoute allow={['doctor', 'admin']}>
                   <DoctorQueue />
                 </ProtectedRoute>
               }

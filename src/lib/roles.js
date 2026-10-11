@@ -20,6 +20,7 @@ const NAV_LINKS = {
   admin: [
     { to: '/analytics', label: 'Analytics' },
     { to: '/dashboard', label: 'Dashboard' },
+    { to: '/queue', label: 'Queue' },
     { to: '/intake', label: 'Intake' },
   ],
 }

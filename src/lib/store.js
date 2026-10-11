@@ -12,7 +12,7 @@ import { wards, createBeds } from '../data/wards.js'
 import { createPatients } from '../data/patients.js'
 import { users } from '../data/users.js'
 import { canTransition, RESERVATION_MINUTES } from './bedMachine.js'
-import { scoreVitals } from './triage.js'
+import { scoreVitals, validateVitals } from './triage.js'
 import * as sync from './sync.js'
 
 export const STORAGE_KEY = 'healthsync:state'
@@ -49,17 +49,24 @@ const listeners = new Set()
 
 // ---------------------------------------------------------------- seed + hydrate
 
-/** Attach triage score/level (and arrivedAt) computed from the patient's vitals. */
+/** Attach triage score/level (and arrivedAt + history) computed from the vitals. */
 function scorePatient(patient) {
   if (!patient || !patient.vitals) return patient
   const scored = scoreVitals(patient.vitals)
+  const arrivedAt = patient.arrivedAt ?? Date.now()
+  // Seed history with the first score so trend arrows have a baseline.
+  const history =
+    patient.history && patient.history.length
+      ? patient.history
+      : [{ score: scored.score, level: scored.level, at: arrivedAt }]
   return {
     ...patient,
-    arrivedAt: patient.arrivedAt ?? Date.now(),
+    arrivedAt,
     score: scored.score,
     level: scored.level,
     breakdown: scored.breakdown,
     redFlag: scored.redFlag,
+    history,
   }
 }
 
@@ -215,18 +222,81 @@ export function setBedStatus(bedId, status, patch = {}) {
   return { ok: true }
 }
 
-/** Admit a waiting patient into a bed, then drop them from the queue. */
+/**
+ * Admit a waiting patient into a bed. Validates the patient is waiting and the
+ * bed is available/reserved (respecting the state machine), then records the
+ * admission on both the bed and the patient in ONE commit.
+ * Returns { ok: true, patient, bedId } or { ok: false, error }.
+ */
 export function admitPatient(patientId, bedId) {
+  const patient = state.patients.find((p) => p.id === patientId)
+  if (!patient) return { ok: false, error: 'Patient was not found.' }
+  if (patient.status !== 'waiting') return { ok: false, error: 'Patient is not waiting.' }
+
+  const bed = state.beds.find((b) => b.id === bedId)
+  if (!bed) return { ok: false, error: 'Bed was not found.' }
+  if (bed.status !== 'available' && bed.status !== 'reserved') {
+    return { ok: false, error: `Bed ${bed.label} is not available (${bed.status}).` }
+  }
+  if (!canTransition(bed.status, 'occupied')) {
+    return { ok: false, error: `Cannot occupy a bed that is ${bed.status}.` }
+  }
+
   const now = Date.now()
+  const waitMinutes = Math.max(0, Math.round((now - patient.arrivedAt) / 60000))
+  const admitted = { ...patient, status: 'admitted', admittedAt: now, bedId, waitMinutes }
+
   commit((s) => ({
     ...s,
-    beds: s.beds.map((bed) =>
-      bed.id === bedId
-        ? { ...bed, status: 'occupied', patientId, occupiedSince: now, expiresAt: null, updatedAt: now }
-        : bed,
+    beds: s.beds.map((b) =>
+      b.id === bedId
+        ? { ...b, status: 'occupied', patientId, occupiedSince: now, expiresAt: null, updatedAt: now }
+        : b,
     ),
-    patients: s.patients.filter((p) => p.id !== patientId),
+    patients: s.patients.map((p) => (p.id === patientId ? admitted : p)),
   }))
+
+  return { ok: true, patient: admitted, bedId }
+}
+
+/**
+ * Re-score a patient with new vitals, appending to their history (trend).
+ * Returns { ok: true, patient, previousScore } or { ok: false, error, errors }.
+ */
+export function reassessPatient(patientId, newVitals) {
+  const errors = validateVitals(newVitals)
+  if (Object.keys(errors).length > 0) return { ok: false, error: 'Invalid vitals.', errors }
+
+  const patient = state.patients.find((p) => p.id === patientId)
+  if (!patient) return { ok: false, error: 'Patient was not found.' }
+
+  const scored = scoreVitals({ ...newVitals })
+  const entry = { score: scored.score, level: scored.level, at: Date.now() }
+  const updated = {
+    ...patient,
+    vitals: { ...newVitals },
+    score: scored.score,
+    level: scored.level,
+    breakdown: scored.breakdown,
+    redFlag: scored.redFlag,
+    history: [...(patient.history || []), entry],
+  }
+
+  commit((s) => ({ ...s, patients: s.patients.map((p) => (p.id === patientId ? updated : p)) }))
+  return { ok: true, patient: updated, previousScore: patient.score }
+}
+
+/** DEV/DEMO ONLY: move a patient's arrival earlier to show the aging effect. */
+export function shiftArrival(patientId, minutes) {
+  const patient = state.patients.find((p) => p.id === patientId)
+  if (!patient) return { ok: false, error: 'Patient was not found.' }
+  const delta = Number(minutes) * 60000
+  if (!Number.isFinite(delta)) return { ok: false, error: 'Minutes must be a number.' }
+  commit((s) => ({
+    ...s,
+    patients: s.patients.map((p) => (p.id === patientId ? { ...p, arrivedAt: p.arrivedAt - delta } : p)),
+  }))
+  return { ok: true }
 }
 
 function nextPatientId(patients) {
@@ -263,6 +333,7 @@ export function addPatient(input = {}) {
     level: scored.level,
     breakdown: scored.breakdown,
     redFlag: scored.redFlag,
+    history: [{ score: scored.score, level: scored.level, at: Date.now() }],
   }
 
   commit((s) => ({ ...s, patients: [...s.patients, patient] }))
@@ -376,6 +447,8 @@ if (import.meta.env.DEV) {
       reset,
       setReservationMinutes,
       getReservationMinutes,
+      reassessPatient,
+      shiftArrival,
     },
   }
 }
